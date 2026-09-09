@@ -1,0 +1,4 @@
+import { ShieldX } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../features/auth/AuthContext';
+export function UnauthorizedPage(){const {role,signOut}=useAuth();return <main className="grid min-h-screen place-items-center bg-slate-50 p-5"><div className="card max-w-lg p-8 text-center"><ShieldX className="mx-auto text-amber-600" size={38}/><h1 className="mt-5 text-3xl font-extrabold">Access not available</h1><p className="mt-3 text-sm leading-6 text-slate-600">Your account does not have the role required for this area. If this seems incorrect, contact an academy administrator.</p><div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row"><Link to={role==='admin'?'/admin/dashboard':'/student/dashboard'} className="btn-primary">Go to my portal</Link><button onClick={()=>void signOut()} className="btn-secondary">Sign out</button></div></div></main>}

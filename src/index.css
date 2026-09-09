@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root { color: #172033; background: #fff; font-synthesis: none; text-rendering: optimizeLegibility; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; min-width: 320px; min-height: 100vh; overflow-x: hidden; }
+  * { box-sizing: border-box; }
+  a, button, input, textarea, select, summary { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2; }
+  h1, h2, h3, h4 { @apply tracking-tight text-navy-900; }
+}
+
+@layer components {
+  .container-shell { @apply mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10; }
+  .section-pad { @apply py-16 sm:py-20 lg:py-24; }
+  .eyebrow { @apply mb-4 inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-brand-700; }
+  .section-title { @apply text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl; }
+  .section-copy { @apply mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg; }
+  .card { @apply rounded-2xl border border-slate-200 bg-white shadow-card; }
+  .btn-primary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-secondary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-navy-900 transition hover:border-brand-500 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50; }
+  .input { @apply min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100; }
+  .label { @apply mb-1.5 block text-sm font-semibold text-slate-700; }
+  .badge { @apply inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700; }
+}
+
+.hero-grid { background-image: linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px); background-size: 42px 42px; }
+.blueprint-grid { background-image: radial-gradient(circle at 1px 1px, rgba(23,133,255,.14) 1px, transparent 0); background-size: 24px 24px; }

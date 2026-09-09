@@ -1,0 +1,4 @@
+import type { ReactNode } from 'react';
+
+export interface Column<T>{key:string;header:string;render:(row:T)=>ReactNode}
+export function DataTable<T extends {id:string}>({columns,rows,empty}:{columns:Column<T>[];rows:T[];empty?:ReactNode}){if(!rows.length)return <>{empty}</>;return <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white"><div className="overflow-x-auto"><table className="w-full min-w-[760px] border-collapse text-left text-sm"><thead className="bg-slate-50"><tr>{columns.map(column=><th key={column.key} scope="col" className="border-b border-slate-200 px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">{column.header}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{rows.map(row=><tr key={row.id} className="hover:bg-slate-50/70">{columns.map(column=><td key={column.key} className="px-5 py-4 align-top text-slate-700">{column.render(row)}</td>)}</tr>)}</tbody></table></div></div>}

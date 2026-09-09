@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>/</loc></url><url><loc>/programs</loc></url>
+  <url><loc>/programs/data-analyst</loc></url><url><loc>/programs/data-science-ml</loc></url>
+  <url><loc>/programs/generative-agentic-ai</loc></url><url><loc>/programs/frontend-developer</loc></url>
+  <url><loc>/programs/python-backend</loc></url><url><loc>/programs/full-stack</loc></url>
+  <url><loc>/learning-experience</loc></url><url><loc>/admissions</loc></url><url><loc>/fees</loc></url>
+  <url><loc>/about</loc></url><url><loc>/faqs</loc></url><url><loc>/policies</loc></url>
+  <url><loc>/contact</loc></url><url><loc>/verify-certificate</loc></url>
+</urlset>
