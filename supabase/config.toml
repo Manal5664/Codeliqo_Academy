@@ -1,0 +1,4 @@
+project_id = "codeliqo-academy"
+
+[functions.issue-certificate]
+static_files = ["./functions/issue-certificate/logo.png"]

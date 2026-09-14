@@ -52,6 +52,11 @@ function message(error: { message: string } | null) {
   if (normalized.includes('selected batch does not belong') || normalized.includes('program_batch_mismatch')) throw new Error('The selected batch does not belong to the selected program.');
   if (normalized.includes('invalid_progress')) throw new Error('Progress percentage must be between 0 and 100.');
   if (normalized.includes('invalid_current_week')) throw new Error('Current week cannot be negative.');
+  if (normalized.includes('programs_slug_key') || normalized.includes('programs_slug_case_insensitive_unique')) throw new Error('That program slug is already in use. Choose a unique slug.');
+  if (normalized.includes('programs_code_key') || normalized.includes('programs_code_case_insensitive_unique')) throw new Error('That program code is already in use. Choose a unique code.');
+  if (normalized.includes('programs_slug_format')) throw new Error('Use a lowercase URL slug containing only letters, numbers, and single hyphens.');
+  if (normalized.includes('programs_status_check')) throw new Error('Program status must be Draft or Published.');
+  if (normalized.includes('programs_display_order_check')) throw new Error('Display order must be a whole number of 0 or greater.');
   if (normalized.includes('student_not_found') || normalized.includes('enrollment_not_found')) throw new Error('The student or enrollment no longer exists. Reload the page and try again.');
   if (normalized.includes('forbidden')) throw new Error('Your administrator session is not authorized to make this change.');
   throw new Error(error.message);
@@ -61,8 +66,9 @@ export async function listRecords(
   table: string,
   select = '*',
   orderBy = 'created_at',
+  ascending = false,
 ): Promise<AdminRecord[]> {
-  const { data, error } = await supabase.from(table).select(select).order(orderBy, { ascending: false });
+  const { data, error } = await supabase.from(table).select(select).order(orderBy, { ascending });
   message(error);
   return (data ?? []) as unknown as AdminRecord[];
 }
@@ -78,6 +84,14 @@ export async function saveRecord(table: string, values: Record<string, unknown>,
 export async function deleteRecord(table: string, id: string) {
   const { error } = await supabase.from(table).delete().eq('id', id);
   message(error);
+}
+
+export async function createAssignmentSubmissionFileUrl(path: string, fileName: string | null, download = false) {
+  const options = download ? { download: fileName || 'assignment-submission' } : undefined;
+  const { data, error } = await supabase.storage.from('assignment-submissions').createSignedUrl(path, 60, options);
+  message(error);
+  if (!data?.signedUrl) throw new Error('The submitted file is unavailable.');
+  return data.signedUrl;
 }
 
 export async function loadAdminOverview() {

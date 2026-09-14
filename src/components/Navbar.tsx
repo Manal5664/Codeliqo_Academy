@@ -3,10 +3,10 @@ import { ChevronDown, Menu, X } from 'lucide-react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { BrandMark } from './BrandMark';
 import { ApplyLink } from './ApplyLink';
-import { programs } from '../data/programs';
 import { classNames } from '../lib/utils';
 import { useAuth } from '../features/auth/AuthContext';
 import { dashboardPath } from '../features/auth/authPolicy';
+import { useProgramCatalog } from '../features/programs/ProgramCatalogContext';
 
 const links = [{ label: 'Home', to: '/' }, { label: 'Learning Experience', to: '/learning-experience' }, { label: 'Admissions', to: '/admissions' }, { label: 'About', to: '/about' }, { label: 'FAQs', to: '/faqs' }, { label: 'Contact', to: '/contact' }];
 
@@ -15,6 +15,7 @@ export function Navbar() {
   const [mobileProgramsOpen, setMobileProgramsOpen] = useState(false);
   const location = useLocation();
   const { role, accountStatus } = useAuth();
+  const { programs } = useProgramCatalog();
   const hasPortalAccess = accountStatus === 'ready' && role;
   const portalPath = hasPortalAccess ? dashboardPath(role) : '/student/login';
   const portalLabel = hasPortalAccess

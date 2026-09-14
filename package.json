@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:programs": "node scripts/verify-program-catalog.mjs",
+    "test:certificates": "node scripts/verify-certificate-signing.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

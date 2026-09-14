@@ -2,8 +2,8 @@ import { ArrowRight, BarChart3, Blocks, BookOpen, Bot, BriefcaseBusiness, CheckC
 import { Link } from 'react-router-dom';
 import { ApplyLink } from '../../components/ApplyLink';
 import { ProgramCard } from '../../components/ProgramCard';
-import { CTASection, SectionHeading } from '../../components/ui';
-import { programs } from '../../data/programs';
+import { CTASection, EmptyState, ErrorState, LoadingState, SectionHeading } from '../../components/ui';
+import { useProgramCatalog } from '../../features/programs/ProgramCatalogContext';
 import { faqs } from '../../data/faqs';
 import { usePageMeta } from '../../hooks/usePageMeta';
 
@@ -28,6 +28,7 @@ const journeySteps = [
 ] as const;
 
 export function HomePage() {
+  const { programs, loading: programsLoading, error: programsError, reload: reloadPrograms } = useProgramCatalog();
   usePageMeta('Learn. Build. Innovate.', 'Practical career-focused training in software development, data science and artificial intelligence.');
   return <>
     <section className="hero-grid relative overflow-hidden bg-navy-950 text-white">
@@ -40,7 +41,7 @@ export function HomePage() {
 
     <section className="section-pad"><div className="container-shell grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:items-start"><SectionHeading eyebrow="Built for application" title="A technology academy centred on doing" copy="Codeliqo Academy combines structured teaching with deliberate practice. Students learn the reasoning behind modern tools, then use them to solve increasingly realistic problems."/><div className="grid gap-4 sm:grid-cols-2">{values.map(([Icon,title,copy]) => { const ValueIcon = Icon as typeof Radio; return <article key={String(title)} className="card p-5"><ValueIcon className="text-brand-600" size={23}/><h3 className="mt-4 font-bold">{String(title)}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{String(copy)}</p></article>; })}</div></div></section>
 
-    <section className="section-pad bg-slate-50"><div className="container-shell"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><SectionHeading eyebrow="Career programs" title="Six pathways. One practical standard." copy="Choose a focused route based on the work you want to learn and the kind of portfolio you want to build."/><Link to="/programs" className="mb-10 inline-flex items-center gap-2 text-sm font-bold text-brand-700">Compare all programs<ArrowRight size={16}/></Link></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{programs.map((program) => <ProgramCard key={program.slug} program={program}/>)}</div></div></section>
+    <section className="section-pad bg-slate-50"><div className="container-shell"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><SectionHeading eyebrow="Career programs" title="Practical pathways for modern technology careers." copy="Choose a focused route based on the work you want to learn and the kind of portfolio you want to build."/><Link to="/programs" className="mb-10 inline-flex items-center gap-2 text-sm font-bold text-brand-700">Compare all programs<ArrowRight size={16}/></Link></div>{programsLoading?<LoadingState label="Loading programs"/>:programsError?<ErrorState message={programsError} onRetry={reloadPrograms}/>:programs.length?<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{programs.map((program) => <ProgramCard key={program.slug} program={program}/>)}</div>:<EmptyState title="No programs are published yet" message="Published programs will appear here automatically."/>}</div></section>
 
     <section className="section-pad overflow-hidden"><div className="container-shell grid gap-12 lg:grid-cols-2 lg:items-center"><div className="blueprint-grid rounded-3xl border border-brand-100 bg-brand-50 p-6 sm:p-9"><div className="rounded-2xl bg-white p-6 shadow-card"><div className="flex items-center gap-3"><div className="grid size-11 place-items-center rounded-xl bg-navy-900 text-white"><Blocks/></div><div><p className="text-xs font-bold uppercase tracking-wider text-brand-600">Learning model</p><h3 className="text-xl font-bold">Learn by building</h3></div></div><div className="mt-7 space-y-4">{['Instructor demonstration creates a clear mental model','Focused exercises turn concepts into working skill','Assignments reveal what needs more practice','Projects combine multiple skills in realistic contexts','Feedback drives revision and stronger decisions'].map((item) => <div key={item} className="flex gap-3 text-sm leading-6 text-slate-700"><CheckCircle2 className="mt-0.5 shrink-0 text-brand-600" size={18}/>{item}</div>)}</div></div></div><div><span className="eyebrow">The learning experience</span><h2 className="section-title">From guided concepts to independent work</h2><p className="section-copy">The goal is not passive exposure. Each pathway moves through demonstration, practice, submission, feedback and improvement so students learn how to think through the work—not just repeat steps.</p><div className="mt-7 grid grid-cols-3 gap-3"><MiniMetric icon={Presentation} value="Live" label="Instructor guidance"/><MiniMetric icon={BarChart3} value="Tracked" label="Learning progress"/><MiniMetric icon={FolderGit2} value="Built" label="Portfolio projects"/></div><Link to="/learning-experience" className="btn-secondary mt-7">Explore how learning works<ArrowRight size={16}/></Link></div></div></section>
 

@@ -31,16 +31,17 @@ import { StudentDashboardPage } from './pages/student/StudentDashboardPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminStudentsPage } from './pages/admin/AdminStudentsPage';
 import { AdminSubmissionsPage } from './pages/admin/AdminSubmissionsPage';
+import { AdminCertificatesPage } from './pages/admin/AdminCertificatesPage';
+import { CertificateSettingsPage } from './pages/admin/CertificateSettingsPage';
+import { AdminProgramsPage } from './pages/admin/AdminProgramsPage';
 import {
   AdminAnnouncementsPage,
   AdminAssignmentsPage,
   AdminAttendancePage,
   AdminBatchesPage,
-  AdminCertificatesPage,
   AdminEnrollmentsPage,
   AdminLessonsPage,
   AdminPaymentsPage,
-  AdminProgramsPage,
   AdminProjectsPage,
 } from './pages/admin/AdminResourcesPages';
 
@@ -107,6 +108,8 @@ export const router = createBrowserRouter([
             { path: 'attendance', element: <AdminAttendancePage />, handle: { title: 'Attendance' } },
             { path: 'payments', element: <AdminPaymentsPage />, handle: { title: 'Payments' } },
             { path: 'certificates', element: <AdminCertificatesPage />, handle: { title: 'Certificates' } },
+            { path: 'settings', element: <Navigate to="/admin/settings/certificates" replace /> },
+            { path: 'settings/certificates', element: <CertificateSettingsPage />, handle: { title: 'Certificate Settings' } },
             { path: 'announcements', element: <AdminAnnouncementsPage />, handle: { title: 'Announcements' } },
             { path: '*', element: <Navigate to="dashboard" replace /> },
           ],

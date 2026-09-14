@@ -1,5 +1,5 @@
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
-import { Pencil, Plus, Save, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, Pencil, Plus, Save, Trash2 } from 'lucide-react';
 import { DataTable, type Column } from './DataTable';
 import { Modal } from './Modal';
 import { PortalPage } from './PortalPage';
@@ -18,7 +18,13 @@ export interface AdminField {
   required?: boolean;
   placeholder?: string;
   help?: string;
+  defaultValue?: unknown;
+  min?: number;
+  max?: number;
+  step?: number;
+  pattern?: string;
   options?: Option[];
+  showWhen?: { field: string; values: string[] };
   reference?: {
     table: string;
     label: string;
@@ -41,14 +47,22 @@ interface Props {
   columns: AdminColumn[];
   select?: string;
   orderBy?: string;
+  ascending?: boolean;
+  allowDelete?: boolean;
+  wideForm?: boolean;
+  validate?: (values: Record<string, unknown>, editing: AdminRecord | null) => void;
+  statusToggle?: { field: string; enabledValue: string; disabledValue: string; enabledLabel: string; disabledLabel: string };
+  addLabel?: string;
 }
 
-export function AdminResourcePage({ title, description, singular, table, fields, columns, select = '*', orderBy = 'created_at' }: Props) {
-  const records = useSupabaseQuery(() => listRecords(table, select, orderBy), [table, select, orderBy]);
+export function AdminResourcePage({ title, description, singular, table, fields, columns, select = '*', orderBy = 'created_at', ascending = false, allowDelete = true, wideForm = false, validate, statusToggle, addLabel }: Props) {
+  const records = useSupabaseQuery(() => listRecords(table, select, orderBy, ascending), [table, select, orderBy, ascending]);
   const [editing, setEditing] = useState<AdminRecord | null>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [changingId, setChangingId] = useState('');
   const [selectValues, setSelectValues] = useState<Record<string, string>>({});
   const references = useReferenceOptions(fields);
 
@@ -58,51 +72,78 @@ export function AdminResourcePage({ title, description, singular, table, fields,
       key: 'actions',
       header: 'Actions',
       render: (row) => <div className="flex items-center gap-2">
+        {statusToggle && <button type="button" disabled={changingId === row.id} onClick={() => void toggleStatus(row)} className="rounded-lg p-2 text-slate-500 hover:bg-brand-50 hover:text-brand-700 disabled:opacity-50" aria-label={String(row[statusToggle.field]) === statusToggle.enabledValue ? statusToggle.disabledLabel : statusToggle.enabledLabel} title={String(row[statusToggle.field]) === statusToggle.enabledValue ? statusToggle.disabledLabel : statusToggle.enabledLabel}>{String(row[statusToggle.field]) === statusToggle.enabledValue ? <EyeOff size={16}/> : <Eye size={16}/>}</button>}
         <button type="button" onClick={() => {
           setEditing(row);
-          setSelectValues(Object.fromEntries(fields.filter((field) => field.type === 'select' || field.reference).map((field) => [field.key, String(row[field.key] ?? '')])));
+          setSelectValues(Object.fromEntries(fields.filter((field) => field.type === 'select' || field.reference).map((field) => [field.key, String(row[field.key] ?? field.defaultValue ?? '')])));
           setFormError('');
           setOpen(true);
         }} className="rounded-lg p-2 text-slate-500 hover:bg-brand-50 hover:text-brand-700" aria-label={`Edit ${singular}`}><Pencil size={16} /></button>
-        <button type="button" onClick={() => void remove(row)} className="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600" aria-label={`Delete ${singular}`}><Trash2 size={16} /></button>
+        {allowDelete && <button type="button" onClick={() => void remove(row)} className="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600" aria-label={`Delete ${singular}`}><Trash2 size={16} /></button>}
       </div>,
     },
-  ], [columns, fields, singular]);
+  ], [allowDelete, changingId, columns, fields, singular, statusToggle]);
+
+  const toggleStatus = async (row: AdminRecord) => {
+    if (!statusToggle) return;
+    const enabled = String(row[statusToggle.field]) === statusToggle.enabledValue;
+    const next = enabled ? statusToggle.disabledValue : statusToggle.enabledValue;
+    setChangingId(row.id); setFormError(''); setSuccess('');
+    try {
+      await saveRecord(table, { [statusToggle.field]: next }, row.id);
+      await records.reload();
+      setSuccess(`${singular} ${next === statusToggle.enabledValue ? 'published' : 'moved to draft'} successfully.`);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : `Unable to update ${singular.toLowerCase()} status.`);
+    } finally { setChangingId(''); }
+  };
 
   const remove = async (row: AdminRecord) => {
     const label = String(row.title ?? row.name ?? row.certificate_id ?? `this ${singular.toLowerCase()}`);
     if (!window.confirm(`Delete ${singular.toLowerCase()} “${label}”? This cannot be undone.`)) return;
-    try { await deleteRecord(table, row.id); await records.reload(); }
+    try { await deleteRecord(table, row.id); await records.reload(); setSuccess(`${singular} deleted successfully.`); }
     catch (error) { window.alert(error instanceof Error ? error.message : `Unable to delete ${singular.toLowerCase()}.`); }
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setBusy(true); setFormError('');
+    setBusy(true); setFormError(''); setSuccess('');
     try {
       const data = new FormData(event.currentTarget);
       const values: Record<string, unknown> = {};
       for (const field of fields) {
+        if (!fieldIsVisible(field, selectValues)) {
+          values[field.key] = editing?.[field.key] ?? field.defaultValue ?? null;
+          continue;
+        }
         const raw = data.get(field.key);
         if (field.type === 'checkbox') values[field.key] = raw === 'on';
         else if (field.type === 'number') values[field.key] = raw === '' ? null : Number(raw);
-        else if (field.type === 'json') values[field.key] = raw ? JSON.parse(String(raw)) : [];
+        else if (field.type === 'json') {
+          try { values[field.key] = raw ? JSON.parse(String(raw)) : []; }
+          catch { throw new Error(`${field.label} must contain valid JSON.`); }
+        }
         else values[field.key] = raw === '' ? null : String(raw);
       }
+      validate?.(values, editing);
       await saveRecord(table, values, editing?.id);
       await records.reload();
       setOpen(false); setEditing(null);
+      setSuccess(`${singular} ${editing ? 'updated' : 'created'} successfully.`);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : `Unable to save ${singular.toLowerCase()}.`);
     } finally { setBusy(false); }
   };
 
-  return <PortalPage title={title} description={description} actions={<button type="button" className="btn-primary" onClick={() => { setEditing(null); setSelectValues({}); setFormError(''); setOpen(true); }}><Plus size={16} />Add {singular}</button>}>
+  return <PortalPage title={title} description={description} actions={<button type="button" className="btn-primary" onClick={() => { setEditing(null); setSelectValues(Object.fromEntries(fields.filter((field) => field.type === 'select' || field.reference).map((field) => [field.key, String(field.defaultValue ?? '')]))); setFormError(''); setSuccess(''); setOpen(true); }}><Plus size={16} />{addLabel ?? `Add ${singular}`}</button>}>
+    {success && <p role="status" className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{success}</p>}
+    {formError && !open && <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{formError}</p>}
     {records.loading ? <LoadingState label={`Loading ${title.toLowerCase()}`} /> : records.error ? <ErrorState message={records.error} onRetry={records.reload} /> : <DataTable columns={tableColumns} rows={records.data ?? []} empty={<EmptyState title={`No ${title.toLowerCase()} yet`} message={`Create the first ${singular.toLowerCase()} to get started.`} />} />}
-    <Modal open={open} onClose={() => { if (!busy) setOpen(false); }} title={`${editing ? 'Edit' : 'Add'} ${singular}`}>
+    <Modal open={open} onClose={() => { if (!busy) setOpen(false); }} title={`${editing ? 'Edit' : 'Add'} ${singular}`} wide={wideForm}>
       <form onSubmit={submit} className="space-y-5">
         <div className="grid gap-5 sm:grid-cols-2">
           {fields.map((field) => {
+            if (!fieldIsVisible(field, selectValues)) return null;
             const match = field.reference?.match;
             const availableOptions = field.options ?? references[field.key] ?? [];
             const filteredOptions = match
@@ -111,7 +152,7 @@ export function AdminResourcePage({ title, description, singular, table, fields,
             return <ResourceField
               key={field.key}
               field={field}
-              value={editing?.[field.key]}
+              value={editing ? editing[field.key] : field.defaultValue}
               selectedValue={selectValues[field.key] ?? ''}
               options={filteredOptions}
               onValueChange={(value) => setSelectValues((current) => {
@@ -134,6 +175,10 @@ export function AdminResourcePage({ title, description, singular, table, fields,
   </PortalPage>;
 }
 
+function fieldIsVisible(field: AdminField, selectValues: Record<string, string>) {
+  return !field.showWhen || field.showWhen.values.includes(selectValues[field.showWhen.field] ?? '');
+}
+
 function ResourceField({ field, value, selectedValue, options, onValueChange }: { field: AdminField; value: unknown; selectedValue: string; options: Option[]; onValueChange: (value: string) => void }) {
   const id = `admin-field-${field.key}`;
   const initial = value == null ? '' : field.type === 'json' ? JSON.stringify(value, null, 2) : field.type === 'date' ? String(value).slice(0, 10) : field.type === 'time' ? String(value).slice(0, 5) : String(value);
@@ -144,7 +189,7 @@ function ResourceField({ field, value, selectedValue, options, onValueChange }: 
       ? <select id={id} name={field.key} value={selectedValue} onChange={(event) => onValueChange(event.target.value)} className="input" required={field.required}><option value="">Select {field.label.toLowerCase()}</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
       : field.type === 'textarea' || field.type === 'json'
         ? <textarea id={id} name={field.key} defaultValue={initial} className="input min-h-28 resize-y font-inherit" required={field.required} placeholder={field.placeholder} />
-        : <input id={id} name={field.key} type={field.type ?? 'text'} defaultValue={initial} className="input" required={field.required} placeholder={field.placeholder} step={field.type === 'number' ? 'any' : undefined} />}
+        : <input id={id} name={field.key} type={field.type ?? 'text'} defaultValue={initial} className="input" required={field.required} placeholder={field.placeholder} min={field.min} max={field.max} pattern={field.pattern} step={field.type === 'number' ? field.step ?? 'any' : undefined} />}
     {field.help && <p className="mt-1.5 text-xs leading-5 text-slate-500">{field.help}</p>}
   </div>;
 }

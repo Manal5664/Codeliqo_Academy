@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { BrandMark } from './BrandMark';
-import { programs } from '../data/programs';
 import { env } from '../lib/env';
+import { useProgramCatalog } from '../features/programs/ProgramCatalogContext';
 
 export function Footer() {
+  const { programs } = useProgramCatalog();
   return <footer className="bg-navy-950 text-slate-300">
     <div className="container-shell grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4">
       <div><BrandMark large /><p className="mt-5 max-w-sm text-sm leading-6 text-slate-400">Practical, career-focused training in software development, data science and artificial intelligence.</p><p className="mt-4 text-sm font-semibold text-brand-500">Learn. Build. Innovate.</p></div>
